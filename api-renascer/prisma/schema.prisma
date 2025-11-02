@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum SupplierType {
+  Collector
+  Agent
+  Company
+}
+
+enum Unit {
+  g
+  kg
+}
+
+enum CollectionStatus {
+  Scheduled
+  Confirmed
+  Collected
+}
+
+model Supplier {
+  id           Int          @id @default(autoincrement())
+  name         String
+  taxId        String       @unique
+  phone        String
+  address      String
+  email        String       @unique
+  supplierType SupplierType
+  materialType String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  collections Collection[]
+
+  @@map("suppliers")
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  name      String
+  taxId     String   @unique
+  phone     String
+  address   String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales Sale[]
+
+  @@map("clients")
+}
+
+model CollectionPoint {
+  id          Int      @id @default(autoincrement())
+  name        String
+  responsible String
+  address     String
+  phone       String
+  email       String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("collection_points")
+}
+
+model ProductType {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String
+  unit        Unit
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  collections Collection[]
+  sales       Sale[]
+
+  @@map("product_types")
+}
+
+model Collection {
+  id         Int              @id @default(autoincrement())
+  supplierId Int
+  productId  Int
+  status     CollectionStatus @default(Scheduled)
+  dateTime   DateTime
+  location   String
+  weight     Float
+  value      Float
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  supplier Supplier    @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  product  ProductType @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("collections")
+}
+
+model Sale {
+  id        Int      @id @default(autoincrement())
+  clientId  Int
+  productId Int
+  dateTime  DateTime
+  weight    Float
+  value     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client  Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  product ProductType @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("sales")
+}
